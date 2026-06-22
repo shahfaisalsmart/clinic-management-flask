@@ -27,7 +27,7 @@ class DoctorRepository:
         return user, profile
     
 
-    def update_doctor_full_profile(self, user_id, new_name=None, specialization=None, qualificaiton=None):
+    def update_doctor_full_profile(self, user_id, new_name=None, specialization=None, qualification=None, bio=None, treatment_services=None):
         user =  User.query.filter_by(id=user_id).first()
         if not user:
             return None
@@ -37,13 +37,16 @@ class DoctorRepository:
             user.name = new_name
         
         #updating DoctorProfile
-
         profile = DoctorProfile.query.filter_by(user_id=user_id).first()
         if profile: 
             if specialization is not None:
                 profile.specialization = specialization
-            if qualificaiton is not None:
-                profile.qualification = qualificaiton
+            if qualification is not None:  
+                profile.qualification = qualification
+            if bio is not None:
+                profile.bio = bio
+            if treatment_services is not None:
+                profile.treatment_services = treatment_services
             
         db.session.commit()
         return user, profile
