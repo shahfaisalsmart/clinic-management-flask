@@ -1,5 +1,6 @@
 import logging
 from logging.config import fileConfig
+from src.reimbursement.models import InsuranceProduct, UserInsurance 
 
 from flask import current_app
 

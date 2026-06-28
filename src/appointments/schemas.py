@@ -19,9 +19,19 @@ class DayScheduleSchema(Schema):
 
 class UpdateDoctorProfileAndScheduleSchema(Schema):
     venue_address = fields.Str(required=True, validate=validate.Length(min=5))
+    start_time = fields.Str(required=True, validate=validate.Regexp(r'^\d{2}:\d{2}$')) # e.g. "16:00"
+    end_time = fields.Str(required=True, validate=validate.Regexp(r'^\d{2}:\d{2}$'))   # e.g. "19:00"
+    slot_duration_mins = fields.Int(required=True, validate=validate.Range(min=5, max=120))
     fee = fields.Float(required=True, validate=validate.Range(min=0))
-    treatment_services = fields.List(fields.Str(), required=True) # List of Strings
-    weekly_schedule = fields.List(fields.Nested(DayScheduleSchema), required=True) # Day-wise timing
+    treatment_services = fields.List(fields.Str(), required=True)
+    work_on_sunday = fields.Boolean(load_default=False)
+
+class BulkHolidaySchema(Schema):
+    """NEW VALIDATOR: Postman se multiple data points parse krne ke liye"""
+    holiday_dates = fields.List(
+        fields.Str(required=True, validate=validate.Regexp(r'^\d{4}-\d{2}-\d{2}$')),
+        required=True
+    )
 
 class BookAppointmentSchema(Schema):
     doctor_id = fields.Int(required=True)
@@ -31,7 +41,7 @@ class CancelRequestSchema(Schema):
     appointment_id = fields.Int(required=True)
     cancellation_reason = fields.Str(required=True)
 
-class AdminApproveCancelSchema(Schema):
+class DoctorApproveCancelSchema(Schema):
     appointment_id = fields.Int(required=True)
     action = fields.Str(required=True, validate=validate.OneOf(["APPROVE", "REJECT"]))
 

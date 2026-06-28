@@ -8,6 +8,8 @@ class AppointmentStatus(enum.Enum):
     CANCELLATION_REQUESTED = "CANCELLATION_REQUESTED"
     CANCELLED = "CANCELLED"
     COMPLETED = "COMPLETED"
+    APPROVE = "APPROVE"
+    REJECT = "REJECT"
 
 """
 class Venue(db.Model):
@@ -30,7 +32,31 @@ class DiagnosticService(db.Model):
     base_price = db.Column(db.Float, nullable=False, default=0.0)
 """
 
+class DoctorConfig(db.Model):
+    """ Doctor ka general shift timing control karne ke liye"""
+    __tablename__ = 'doctor_configs'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profiles.id'), nullable=False, unique=True)
+    venue_address = db.Column(db.String(255), nullable=False)
+    start_time = db.Column(db.String(5), nullable=False)  # e.g., "16:00" (4 PM)
+    end_time = db.Column(db.String(5), nullable=False)    # e.g., "19:00" (7 PM)
+    slot_duration_mins = db.Column(db.Integer, nullable=False, default=15) # 15 mins per slot
+    fee = db.Column(db.Float, nullable=False)
+    work_on_sunday = db.Column(db.Boolean, default=False, nullable=False) # Default Sunday Holiday
+
+
+class DoctorHoliday(db.Model):
+    """ NAYA MODEL: Doctor kis din chutti pr rhega"""
+    __tablename__ = 'doctor_holidays'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profiles.id'), nullable=False)
+    holiday_date = db.Column(db.Date, nullable=False) # Format: YYYY-MM-DD
+
+
 class DoctorAvailability(db.Model):
+    """🚀 HAR EK SLOT/TOKEN KA PHYSICAL STATE: Patient isi se unique entity select karega"""
     __tablename__ = 'doctor_availability'
     
     id = db.Column(db.Integer, primary_key=True)
@@ -38,8 +64,12 @@ class DoctorAvailability(db.Model):
     #venue_id = db.Column(db.Integer, db.ForeignKey('venues.id'), nullable=False)
     venue_address = db.Column(db.String(255), nullable=False)
 
-    slot_start = db.Column(db.DateTime, nullable=False) # e.g., 2026-06-25 10:00:00
-    slot_end = db.Column(db.DateTime, nullable=False)   # e.g., 2026-06-25 10:30:00
+    slot_date = db.Column(db.Date, nullable=False)
+    day_name = db.Column(db.String(20), nullable=False)
+    token_number = db.Column(db.Integer, nullable=False)
+
+    slot_start_time = db.Column(db.String(10), nullable=False)    # e.g., "04:00 PM"
+    slot_end_time = db.Column(db.String(10), nullable=False)      # e.g., "04:15 PM"
     
     #is_home_visit = db.Column(db.Boolean, default=False, nullable=False)
     fee = db.Column(db.Float, nullable=False)
@@ -52,10 +82,13 @@ class Appointment(db.Model):
     member_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     doctor_id = db.Column(db.Integer, db.ForeignKey('doctor_profiles.id'), nullable=False)
     slot_id = db.Column(db.Integer, db.ForeignKey('doctor_availability.id'), nullable=False, unique=True)
-    service_id = db.Column(db.Integer, db.ForeignKey('diagnostic_services.id'), nullable=False)
+    #service_id = db.Column(db.Integer, db.ForeignKey('diagnostic_services.id'), nullable=False)
     
+    # Dynamic generation ke liye ab slot_id foreign key hatakar targeted booking date use karenge
+    booking_date = db.Column(db.Date, nullable=False) 
+    token_number = db.Column(db.Integer, nullable=False) # e.g., Token 1, Token 2
+
     status = db.Column(db.Enum(AppointmentStatus), default=AppointmentStatus.PENDING, nullable=False)
-    token_number = db.Column(db.Integer, nullable=False)
     
     cancellation_reason = db.Column(db.String(255), nullable=True)
     cancelled_at = db.Column(db.DateTime, nullable=True)

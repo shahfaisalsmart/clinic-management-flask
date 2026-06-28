@@ -35,7 +35,6 @@ def upgrade():
     op.create_table('doctor_availability',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('doctor_id', sa.Integer(), nullable=False),
-    sa.Column('venue_id', sa.Integer(), nullable=False),
     sa.Column('slot_start', sa.DateTime(), nullable=False),
     sa.Column('slot_end', sa.DateTime(), nullable=False),
     sa.Column('is_home_visit', sa.Boolean(), nullable=False),

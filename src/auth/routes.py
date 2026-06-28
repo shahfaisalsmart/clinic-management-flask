@@ -6,8 +6,13 @@ from flask_jwt_extended import jwt_required
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
+#-------- SCHEMAS OBJECT MAKING -----------------------
 register_schema = RegisterSchema()
 login_schema = LoginSchema()
+
+
+# --------- SERVICES OBJECT MAKING ---------------------
+authService = AuthService()
 
 # 1. Normal Member/Patient Registration (Koi bhi access kar sakta hai)
 @auth_bp.route('/register', methods=['POST'])
@@ -22,7 +27,7 @@ def register_member():
         return jsonify({"errors" : err.messages}), 400
     
     # Humne manually 'member' role bhej diya, ab data se role_name ki zaroorat nahi hai
-    response, status_code = AuthService().register_user(validated_data, role_name='Member')
+    response, status_code = authService.register_user(validated_data, role_name='Member')
     return jsonify(response), status_code
 
 
@@ -39,7 +44,7 @@ def register_doctor():
         return jsonify({"errors" : err.messages}), 400
     
     # Manually pass 'doctor' role
-    response, status_code = AuthService().register_user(validated_data, role_name='Doctor')
+    response, status_code = authService.register_user(validated_data, role_name='Doctor')
     return jsonify(response), status_code
 
 
@@ -56,7 +61,7 @@ def register_admin():
         return jsonify({"errors" : err.messages}), 400
     
     # Manually pass 'Admin' role
-    response, status_code = AuthService().register_user(validated_data, role_name='Admin')
+    response, status_code = authService.register_user(validated_data, role_name='Admin')
     return jsonify(response), status_code
 
 
@@ -72,5 +77,5 @@ def login():
     except ValidationError as err:
         return jsonify({"errors" : err.messages}), 400
     
-    response, status_code = AuthService().login_user(validated_data)
+    response, status_code = authService.login_user(validated_data)
     return jsonify(response), status_code
