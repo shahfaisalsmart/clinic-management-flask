@@ -40,6 +40,7 @@ def upgrade():
     sa.Column('is_home_visit', sa.Boolean(), nullable=False),
     sa.Column('fee', sa.Float(), nullable=False),
     sa.Column('is_booked', sa.Boolean(), nullable=False),
+    sa.Column('venue_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['doctor_id'], ['doctor_profiles.id'], ),
     sa.ForeignKeyConstraint(['venue_id'], ['venues.id'], ),
     sa.PrimaryKeyConstraint('id')

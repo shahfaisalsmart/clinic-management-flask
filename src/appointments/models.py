@@ -56,7 +56,7 @@ class DoctorHoliday(db.Model):
 
 
 class DoctorAvailability(db.Model):
-    """🚀 HAR EK SLOT/TOKEN KA PHYSICAL STATE: Patient isi se unique entity select karega"""
+    """HAR EK SLOT/TOKEN KA PHYSICAL STATE: Patient isi se unique entity select karega"""
     __tablename__ = 'doctor_availability'
     
     id = db.Column(db.Integer, primary_key=True)

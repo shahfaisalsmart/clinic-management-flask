@@ -80,7 +80,6 @@ def search_doctors():
     user_role = claims.get("role", "Member")
 
     isFeatureAvailable = is_feature_enabled("enable-universal-doctor-search-98128723", str(member_id), user_role);
-
     print(f"DEBUG FLAG STATUS FOR USER {member_id}: ", isFeatureAvailable)
     
     # FEATURE FLAG CHECK 1

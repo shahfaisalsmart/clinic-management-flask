@@ -97,10 +97,12 @@ def run_migrations_online():
     with connectable.connect() as connection:
         # Flask-Migrate ke filters ko apply karne ke liye copy karein
         opts = dict(conf_args)
+        dialect_name = connection.dialect.name
         
-        # Flask-Migrate ki default dict ko overwrite karke reflection parameter engine ko dein
-        opts["render_as_batch"] = True
-        opts["reflect_kwargs"] = {"resolve_fks": False}
+        if dialect_name == "sqlite":
+            # SQLite needs batch mode for many ALTER TABLE operations.
+            opts["render_as_batch"] = True
+            opts["reflect_kwargs"] = {"resolve_fks": False}
 
         context.configure(
             connection=connection,
@@ -109,8 +111,8 @@ def run_migrations_online():
         )
 
         with context.begin_transaction():
-            # Migration chalne se pehle foreign keys checks ko temporary rokhein
-            connection.execute(text("PRAGMA foreign_keys = OFF;"))
+            if dialect_name == "sqlite":
+                connection.execute(text("PRAGMA foreign_keys = OFF;"))
             context.run_migrations()
 
 

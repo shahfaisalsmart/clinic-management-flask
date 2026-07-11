@@ -6,3 +6,6 @@ instance/
 .git
 .gitignore
 README.md
+.env
+.env.*
+*.pem

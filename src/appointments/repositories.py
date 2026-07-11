@@ -68,7 +68,7 @@ class AppointmentRepository:
         db.session.commit()
 
     def get_doctors_by_universal_search(self, search_query: str):
-        # 🚀 SINGLE LINE CLEAN POWER QUERY (With Join, Filter and OR Constraints)
+        #  SINGLE LINE CLEAN POWER QUERY (With Join, Filter and OR Constraints)
         return DoctorProfile.query.join(User, DoctorProfile.user_id == User.id).filter(or_(User.name.ilike(f"%{search_query}%"), 
                                                                                            DoctorProfile.specialization.ilike(f"%{search_query}%"), 
                                                                                            DoctorProfile.qualification.ilike(f"%{search_query}%"), 

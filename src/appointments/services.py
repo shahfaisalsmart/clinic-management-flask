@@ -1,3 +1,4 @@
+# BILAL_TEST_12345
 from src.appointments.models import DoctorAvailability, Appointment, AppointmentStatus, DoctorHoliday, DoctorConfig
 from src.appointments.schemas import cancellation_dashboard_list_schema, CancellationDashboardSchema, admin_all_appointments_list_schema
 from src.appointments.repositories import AppointmentRepository
@@ -100,31 +101,51 @@ class AppointmentService:
             
         self.appoint_repo.bulk_add_holidays(holiday_objects)
         
-        # 🚀 3. FIXED: Booked aur Unbooked dono slots ka perfect cancellation treatment
+        #  3. FIXED: Booked aur Unbooked dono slots ka perfect cancellation treatment
         from src.appointments.models import DoctorAvailability, Appointment, AppointmentStatus
         from src.common.database import db
+        #from sqlalchemy import cast
         
+        # Safe checkpoint to instantly clear any locked threads
+        db.session.commit()
+
         for p_date in parsed_dates:
-            date_iso_str = p_date.strftime('%Y-%m-%d')
-            
+            #date_iso_str = p_date.strftime('%Y-%m-%d')
             # A. Pehle un appointments ko dhoondo jo is chutti wali date ke slots par booked hain
+            print("========== DEBUG ==========", flush=True)
+            print("p_date:", repr(p_date), flush=True)
+            print("type :", type(p_date), flush=True)
+            print("===========================", flush=True)
             booked_slots_query = db.session.query(DoctorAvailability.id).filter(
                 DoctorAvailability.doctor_id == doctor_profile.id,
                 DoctorAvailability.is_booked == True,
-                DoctorAvailability.slot_date == date_iso_str
+                DoctorAvailability.slot_date == p_date
             ).subquery()
             
-            # B. Un sabhi appointments ka status 'CANCELLED' karo aur reason daalo
+
             db.session.query(Appointment).filter(
-                Appointment.slot_id.in_(booked_slots_query)
+                    Appointment.slot_id.in_(booked_slots_query)
             ).update(
-                {
-                    "status": AppointmentStatus.CANCELLED,
-                    "cancellation_reason": "Doctor unavailable due to sudden holiday/emergency leave.",
-                    "cancelled_at": datetime.utcnow()
-                }, 
-                synchronize_session=False
-            )
+                    {
+                        "status": AppointmentStatus.CANCELLED,
+                        "cancellation_reason": "Doctor unavailable due to sudden holiday/emergency leave.",
+                        "cancelled_at": datetime.utcnow()
+                    }, 
+                    synchronize_session=False
+                )
+
+
+            # B. Un sabhi appointments ka status 'CANCELLED' karo aur reason daalo
+            #db.session.query(Appointment).filter(
+               # Appointment.slot_id.in_(booked_slots_query)
+            #).update(
+                #{
+                    #"status": AppointmentStatus.CANCELLED,
+                    #"cancellation_reason": "Doctor unavailable due to sudden holiday/emergency leave.",
+                    #"cancelled_at": datetime.utcnow()
+                #}, 
+                #synchronize_session=False
+            #)
             
             # C. Ab database se is date ke SAARE SLOTS (Chahe booked ho ya unbooked) delete kar do
             db.session.execute(
@@ -133,7 +154,7 @@ class AppointmentService:
                     WHERE doctor_id = :doc_id 
                       AND slot_date = :s_date
                 """),
-                {"doc_id": doctor_profile.id, "s_date": date_iso_str}
+                {"doc_id": doctor_profile.id, "s_date": p_date}
             )
             
         db.session.commit()

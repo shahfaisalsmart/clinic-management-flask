@@ -15,6 +15,8 @@ def create_app(config_class=Config):
     db.init_app(app)
     Migrate(app, db)
 
+    with app.app_context():
+        db.create_all()
 
     #initialize JWT manager
     JWTManager(app)
