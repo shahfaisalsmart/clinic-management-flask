@@ -1,5 +1,6 @@
 import logging
 from logging.config import fileConfig
+from src.reimbursement.models import InsuranceProduct, UserInsurance 
 
 from flask import current_app
 
@@ -7,6 +8,9 @@ from alembic import context
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
+
+from sqlalchemy import text
+
 config = context.config
 
 # Interpret the config file for Python logging.
@@ -73,16 +77,10 @@ def run_migrations_offline():
 
 
 def run_migrations_online():
-    """Run migrations in 'online' mode.
-
-    In this scenario we need to create an Engine
-    and associate a connection with the context.
-
-    """
+    """Run migrations in 'online' mode."""
 
     # this callback is used to prevent an auto-migration from being generated
     # when there are no changes to the schema
-    # reference: http://alembic.zzzcomputing.com/en/latest/cookbook.html
     def process_revision_directives(context, revision, directives):
         if getattr(config.cmd_opts, 'autogenerate', False):
             script = directives[0]
@@ -97,14 +95,27 @@ def run_migrations_online():
     connectable = get_engine()
 
     with connectable.connect() as connection:
+        # Flask-Migrate ke filters ko apply karne ke liye copy karein
+        opts = dict(conf_args)
+        dialect_name = connection.dialect.name
+        
+        if dialect_name == "sqlite":
+            # SQLite needs batch mode for many ALTER TABLE operations.
+            opts["render_as_batch"] = True
+            opts["reflect_kwargs"] = {"resolve_fks": False}
+
         context.configure(
             connection=connection,
             target_metadata=get_metadata(),
-            **conf_args
+            **opts  # conf_args ki jagah hum apna strict custom dict bhej rahe hain
         )
 
         with context.begin_transaction():
+            if dialect_name == "sqlite":
+                connection.execute(text("PRAGMA foreign_keys = OFF;"))
             context.run_migrations()
+
+
 
 
 if context.is_offline_mode():

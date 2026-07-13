@@ -34,17 +34,19 @@ class DoctorService:
         name = data.get('name')
         specialization = data.get('specialization')
         qualification = data.get('qualification')
+        bio = data.get('bio')
 
         #validation
-        if name is None and specialization is None and qualification is None:
-            return {"error": "At least one field (name, specialization, or qualification) is required to update"}, 400
+        if name is None and specialization is None and qualification is None and bio is None:
+            return {"error": "At least one field (name, specialization, qualification & Bio) is required to update"}, 400
 
         #Repository 
         updated_doctor = self.doctor_repo.update_doctor_full_profile(
             user_id= user_id,
             new_name= name,
             specialization=specialization,
-            qualificaiton=qualification
+            qualification=qualification,
+            bio=bio
             )
         
         if not updated_doctor:

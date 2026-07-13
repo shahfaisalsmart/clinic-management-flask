@@ -10,6 +10,10 @@ class DoctorProfile(db.Model):
 
     specialization = db.Column(db.String(100), nullable=False)
     qualification = db.Column(db.String(100), nullable=False)
+    bio = db.Column(db.Text, nullable=True)
+
+    #TREATMENT jo ki Doctor provide krta hai
+    treatment_services = db.Column(db.JSON, nullable=True) 
 
     # Default False rahega, Admin approve karega tab True hoga
     is_approved = db.Column(db.Boolean, default=False, nullable=False)

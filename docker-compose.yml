@@ -1,0 +1,18 @@
+services:
+  clinic-api:
+    build: .
+    image: clinic-management:latest
+    container_name: clinic-management
+    env_file:
+      - .env
+    ports:
+      - "5000:5000"
+    environment:
+      FLASK_APP: "src.app:create_app()"
+      FLASK_RUN_HOST: "0.0.0.0"
+      FLASK_RUN_PORT: "5000"
+      DATABASE_URL: "${DATABASE_URL:?Set DATABASE_URL in .env}"
+    command: >
+      sh -c "flask db upgrade &&
+             python -c \"from src.app import create_app; from src.common.database import db; from src.auth.models import Role; app=create_app(); app.app_context().push(); [db.session.add(Role(name=r)) for r in ['Admin','Doctor','Member'] if not Role.query.filter_by(name=r).first()]; db.session.commit()\" &&
+             flask run --host=0.0.0.0 --port=5000"

@@ -6,15 +6,20 @@ from src.common.utils.decorators import role_required
 from marshmallow import ValidationError
 
 member_bp = Blueprint('member', __name__, url_prefix='/member')
-member_service = MemberService()
+
+# ========= SCHEMAS OBJECT MAKING ===================
 update_schema = MemberUpdateSchema()
+
+# ============ SERVICE OBJECT MAKING ===================
+memberService = MemberService()
+
 
 # 1. Member profile (members only)
 @member_bp.route('/profile', methods=['GET'])
 @role_required(['Member'])
 def get_member_profile():
     current_user_id = get_jwt_identity()  # user id, token se mili
-    response, status_code = member_service.get_profile(int(current_user_id))
+    response, status_code = memberService.get_profile(int(current_user_id))
     return jsonify(response), status_code
 
 # 2. updating member profile
@@ -31,5 +36,5 @@ def update_member_profile():
         return jsonify({"errors": err.messages}), 400
         
     current_user_id = get_jwt_identity()
-    response, status_code = member_service.update_profile(int(current_user_id), validated_data)
+    response, status_code = memberService.update_profile(int(current_user_id), validated_data)
     return jsonify(response), status_code

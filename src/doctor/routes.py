@@ -6,18 +6,25 @@ from src.common.utils.decorators import role_required
 from marshmallow import ValidationError
 
 doctor_bp = Blueprint('doctor', __name__, url_prefix='/doctor')
-doctor_service = DoctorService()
+
+#============== SCHEMAS OBEJCT MAKING ====================
 update_schema = DoctorUpdateSchema()
 
-# 1. डॉक्टर का प्रोफाइल देखने का रूट (सिर्फ Doctor रोल के लिए)
+
+#===================SERVICES OBJECT MAKING ===================
+doctorService = DoctorService()
+
+
+
+# 1. Doctor profiles endpoints restrict only to doctors 
 @doctor_bp.route('/profile', methods=['GET'])
 @role_required(['Doctor'])
 def get_doctor_profile():
     current_user_id = get_jwt_identity() # टोकन से यूजर ID मिली
-    response, status_code = doctor_service.get_profile(int(current_user_id))
+    response, status_code = doctorService.get_profile(int(current_user_id))
     return jsonify(response), status_code
 
-# 2. डॉक्टर का प्रोफाइल अपडेट करने का रूट
+# 2. Doctor profile endpoints for UPDATE
 @doctor_bp.route('/profile', methods=['PUT'])
 @role_required(['Doctor'])
 def update_doctor_profile():
@@ -31,5 +38,5 @@ def update_doctor_profile():
         return jsonify({"errors": err.messages}), 400
         
     current_user_id = get_jwt_identity()
-    response, status_code = doctor_service.update_profile(int(current_user_id), validated_data)
+    response, status_code = doctorService.update_profile(int(current_user_id), validated_data)
     return jsonify(response), status_code
