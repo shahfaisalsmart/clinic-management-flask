@@ -1,0 +1,58 @@
+name: Deploy Clinic API (Docker) to EC2
+
+on:
+  push:
+    branches:
+      - main  # Jab team PR merge karegi, tabhi ye chalega
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Deploy to EC2 via SSH with Rollback
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ec2-user                  # Amazon Linux ka sahi username
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # 1. Project folder me entry li
+          cd /home/ec2-user/clinic_management
+          
+          # 2. Purane working image ka backup tag banaya (Rollback ke liye)
+          docker tag clinic-api:latest clinic-api:backup || true
+          
+          # 3. Latest code pull aur build kiya
+          git pull origin main
+          docker build -t clinic-api:latest .
+          
+          # 4. Purane container ko stop karke naya chalaya
+          docker stop clinic-app-container || true
+          docker rm clinic-app-container || true
+          docker run -d --name clinic-app-container -p 5000:5000 --env-file /home/ec2-user/clinic_management/.env clinic-api:latest
+          
+          # 5. Migration chalaya aur check kiya ki fail toh nahi hua
+          echo "Running Database Migrations..."
+          if ! docker exec clinic-app-container flask db upgrade; then
+            echo "❌ ERROR: Migration failed! Initiating Rollback..."
+            
+            # Database ko downgrade kiya agar half-migrate hua ho
+            docker exec clinic-app-container flask db downgrade || true
+            
+            # Naye container ko delete kiya
+            docker stop clinic-app-container || true
+            docker rm clinic-app-container || true
+            
+            # Backup image se purana container wapas chalaya
+            echo "Reverting to backup image..."
+            docker run -d --name clinic-app-container -p 5000:5000 --env-file /home/ec2-user/clinic_management/.env clinic-api:backup
+            
+            exit 1
+          fi
+
+          echo "✅ Deployment and Migrations successful!"
+          docker image prune -f
