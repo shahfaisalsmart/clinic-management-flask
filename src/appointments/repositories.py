@@ -110,6 +110,20 @@ class AppointmentRepository:
             join(DoctorProfile, Appointment.doctor_id == DoctorProfile.id).\
             join(doctor_user, DoctorProfile.user_id == doctor_user.id).\
             order_by(Appointment.created_at.desc()).all()
+    
+    def force_purge_appointment_by_slot(self, slot_id: int):
+        """
+        Bypasses SQLAlchemy ORM object state tracking lifecycle hooks
+        to directly wipe the conflicting record via absolute atomic query.
+        """
+        from src.appointments.models import Appointment
+        db.session.query(Appointment).filter(Appointment.slot_id == slot_id).delete(synchronize_session=False)
+        db.session.flush()
+
+    def clear_tracked_identity_maps(self):
+        """Flushes the identity map tracking to ensure fresh instance data fetches"""
+        db.session.expunge_all()
+
 
 
 

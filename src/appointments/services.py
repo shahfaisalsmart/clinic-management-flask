@@ -82,7 +82,8 @@ class AppointmentService:
             
         self.appoint_repo.commit_changes()
         return {"message": f"Schedule set! Generated {len(generated_slots)} slots without Sundays/Holidays."}, 200
-
+    
+    """
     def update_doctor_holidays_bulk(self, doctor_user_id, data):
         doctor_profile = self.appoint_repo.get_doctor_profile_by_user_id(doctor_user_id)
         if not doctor_profile:
@@ -150,13 +151,83 @@ class AppointmentService:
             # C. Ab database se is date ke SAARE SLOTS (Chahe booked ho ya unbooked) delete kar do
             db.session.execute(
                 db.text("""
-                    DELETE FROM doctor_availability 
-                    WHERE doctor_id = :doc_id 
-                      AND slot_date = :s_date
-                """),
-                {"doc_id": doctor_profile.id, "s_date": p_date}
-            )
+                    #DELETE FROM doctor_availability 
+                    #WHERE doctor_id = :doc_id 
+                      #AND slot_date = :s_date
+                #"""),
+                #{"doc_id": doctor_profile.id, "s_date": p_date}
+            #)
             
+        #db.session.commit()
+
+        #return {
+            #"message": f"Successfully updated {len(holiday_objects)} holidays. All pending slots cleared and affected patients notified/cancelled!"
+        #}, 200
+        #"""
+    def update_doctor_holidays_bulk(self, doctor_user_id, data):
+        doctor_profile = self.appoint_repo.get_doctor_profile_by_user_id(doctor_user_id)
+        if not doctor_profile:
+            return {"error": "Doctor profile nahi mili"}, 404
+            
+        # 1. Purani holidays saaf ki
+        self.appoint_repo.delete_all_holidays_for_doctor(doctor_profile.id)
+        
+        # 2. Nayi holidays insert ki aur database objects taiyar kiya
+        holiday_objects = []
+        parsed_dates = [] 
+        for date_str in data['holiday_dates']:
+            parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            parsed_dates.append(parsed_date)
+            holiday_objects.append(DoctorHoliday(doctor_id=doctor_profile.id, holiday_date=parsed_date))
+            
+        if not parsed_dates:
+            return {"message": "No holiday dates provided."}, 200
+
+        self.appoint_repo.bulk_add_holidays(holiday_objects)
+        
+        
+        # 3. Bulk Cancellation & Slot Deletion (No Loops, Safe Key Constraints)
+        from src.appointments.models import DoctorAvailability, Appointment, AppointmentStatus
+        from src.common.database import db
+        from datetime import timezone
+
+        current_time = datetime.now(timezone.utc)
+
+        # A. Saare booked slots ek sath nikalen (.in_ handles the pure list automatically)
+        booked_slots_query = db.session.query(DoctorAvailability.id).filter(
+            DoctorAvailability.doctor_id == doctor_profile.id,
+            DoctorAvailability.is_booked == True,
+            DoctorAvailability.slot_date.in_(parsed_dates)
+        ).subquery()
+
+        # B. Ek query mein saare matching appointments cancel karein
+        db.session.query(Appointment).filter(
+            Appointment.slot_id.in_(booked_slots_query)
+        ).update(
+            {
+                "status": AppointmentStatus.CANCELLED,
+                "cancellation_reason": "Doctor unavailable due to sudden holiday/emergency leave.",
+                "cancelled_at": current_time
+            }, 
+            synchronize_session=False
+        )
+
+       
+        db.session.query(Appointment).filter(
+            Appointment.slot_id.in_(booked_slots_query)
+        ).update({
+            "status": AppointmentStatus.CANCELLED,
+            "cancellation_reason": "Doctor unavailable due to sudden holiday/emergency leave.",
+            "cancelled_at": current_time
+        }, synchronize_session=False)
+
+        # D. Ek query mein saare slots safely delete kar diye
+        db.session.query(DoctorAvailability).filter(
+            DoctorAvailability.doctor_id == doctor_profile.id,
+            DoctorAvailability.slot_date.in_(parsed_dates)
+        ).delete(synchronize_session=False)
+            
+        # Single final commit for all operations
         db.session.commit()
 
         return {
@@ -320,7 +391,7 @@ class AppointmentService:
         new_holiday = DoctorHoliday(doctor_id=doctor_id, holiday_date=holiday_date)
         self.appoint_repo.add_holiday(new_holiday)
         return {"message": f"Date {data['holiday_date']} successfully marked as Holiday!"}, 201
-
+    """
     def book_appointment(self, member_id, data):
         slot_id = data['slot_id']
         doctor_id = data['doctor_id']
@@ -359,6 +430,46 @@ class AppointmentService:
             "booking_status": "SUCCESS", 
             "message": "Aapka slot book ho chuka hai aur dashboard pr inject ho gaya h!"
         }, 201
+        """
     
+    def book_appointment(self, member_id, data):
+        slot_id = data['slot_id']
+        doctor_id = data['doctor_id']
+        
+        # 1. Row concurrency lock
+        
+        self.appoint_repo.force_purge_appointment_by_slot(slot_id)
+        self.appoint_repo.clear_tracked_identity_maps()
+        
+        slot = self.appoint_repo.get_slot_for_update(slot_id)
+
+        if not slot or slot.doctor_id != doctor_id:
+            return {"error": "Invalid target slot payload matching"}, 400
+            
+        if slot.is_booked:
+            return {"error": "Ye slot pehle se hi book ho chuka hai!"}, 400
+
+            
+        # 3. Mark active state
+        slot.is_booked = True
+        token_number = slot.token_number 
+
+        # 4. Insert fresh record securely
+        new_appointment = Appointment(
+            member_id=member_id,
+            doctor_id=doctor_id,
+            slot_id=slot.id,
+            booking_date=slot.slot_date,
+            token_number=token_number,
+            status=AppointmentStatus.CONFIRMED
+        )
+        
+        self.appoint_repo.create_appointment(new_appointment)
+        
+        return {
+            "booking_status": "SUCCESS", 
+            "message": "Aapka slot book ho chuka hai aur dashboard pr inject ho gaya h!"
+        }, 201
+
 
 
