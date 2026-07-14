@@ -17,7 +17,7 @@ jobs:
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST }}
-        username: ec2-user                  # Amazon Linux ka sahi username
+        username: ${{ secrets.EC2_USERNAME }}                 # Amazon Linux ka sahi username
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
           # 1. Project folder me entry li

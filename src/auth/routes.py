@@ -14,6 +14,16 @@ login_schema = LoginSchema()
 # --------- SERVICES OBJECT MAKING ---------------------
 authService = AuthService()
 
+"""
+#test 
+@auth_bp.route('/tesing', methods=['POST'])
+def testing_DB():
+    json_data = request.get_json()
+    response , status_code = authService.testingForDB(json_data)
+    return jsonify(response), status_code
+    """
+
+
 # 1. Normal Member/Patient Registration (Koi bhi access kar sakta hai)
 @auth_bp.route('/register', methods=['POST'])
 def register_member():

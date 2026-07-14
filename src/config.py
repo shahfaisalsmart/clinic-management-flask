@@ -7,6 +7,7 @@ load_dotenv()
 
 
 def get_database_url():
+    return "sqlite:///clinic.db"
     database_url = os.environ.get("DATABASE_URL")
     if not database_url:
         return "sqlite:///clinic.db"

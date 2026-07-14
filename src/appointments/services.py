@@ -1,4 +1,3 @@
-# BILAL_TEST_12345
 from src.appointments.models import DoctorAvailability, Appointment, AppointmentStatus, DoctorHoliday, DoctorConfig
 from src.appointments.schemas import cancellation_dashboard_list_schema, CancellationDashboardSchema, admin_all_appointments_list_schema
 from src.appointments.repositories import AppointmentRepository
