@@ -98,7 +98,7 @@ def search_doctors():
             return jsonify({"error" : "Old search 'specialization' parameter is mandatory"}), 400
         
         #Purana service function query hit karega
-        response, status_code = AppointmentService().search_doctors_by_specialization(specialization_query)
+        response, status_code = appointmentServices.search_doctors_by_specialization(specialization_query)
         return jsonify(response), status_code
 
 
