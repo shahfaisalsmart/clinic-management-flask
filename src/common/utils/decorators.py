@@ -35,3 +35,18 @@ def role_required(allowed_roles):
             return fn(*args, **kwargs)
         return wrapper
     return decorator
+
+
+"""
+def doctor_required():
+    def decorator(fn):
+        @wraps(fn)
+        @jwt_required()
+        def wrapper(*args, **kwargs):
+            claims = get_jwt()
+            if claims.get("role") != "Doctor":
+                return jsonify({"error": "Access Denied! Sirf Doctors hi apni availability manage kar sakte hain!"}), 403
+            return fn(*args, **kwargs)
+        return wrapper
+    return decorator
+"""

@@ -13,7 +13,15 @@ class AuthService:
     def __init__(self):
         self.auth_repo = AuthRepository()
         self.doctor_repo = DoctorRepository()
-    
+    """
+    def testingForDB(self, data):
+        new_data = self.auth_repo.create_test(
+            id = ['id'],
+            name = ['name']
+        )
+        return new_data,201
+    """
+
     # role_name parameter accept karega jo routes se aayega
     def register_user(self, data, role_name):
         if self.auth_repo.get_user_by_email(data['email']):

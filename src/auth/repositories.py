@@ -20,3 +20,13 @@ class AuthRepository:
         db.session.commit()
         return new_user
 
+    """  
+    def create_test(self, id, name):
+        new_test = Test()
+        new_test.id = id
+        new_test.name = name
+        return new_test.to_dict()
+        """
+    
+
+
