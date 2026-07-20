@@ -74,6 +74,14 @@ class AppointmentRepository:
                                                                                            DoctorProfile.qualification.ilike(f"%{search_query}%"), 
                                                                                            DoctorProfile.bio.ilike(f"%{search_query}%"), 
                                                                                            DoctorProfile.treatment_services.cast(db.String).ilike(f"%{search_query}%"))).all()
+    
+    def get_doctors_by_specialization_only(self, specialization_query: str):
+        # CLEAN POWER QUERY: Sirf Specialization filter ke sath (Baki User Join same rahega)
+        return DoctorProfile.query.join(
+            User, DoctorProfile.user_id == User.id
+        ).filter(
+            DoctorProfile.specialization.ilike(f"%{specialization_query}%")
+        ).all()
 
     def get_upcoming_free_slots(self, doctor_id: int):
         """WAPAS JODA: Doctor ke aage aane wale saare khaali slots nikalne ke liye"""

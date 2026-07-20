@@ -1,5 +1,4 @@
 from src.common.database import db
-from src.doctor.models import DoctorProfile
 
 class Department(db.Model):
     __tablename__ = 'departments'

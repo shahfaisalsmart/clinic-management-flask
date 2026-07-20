@@ -1,4 +1,4 @@
-from src.auth.models import User, Role
+from src.auth.models import User, Role 
 from src.common.database import db
 from src.auth.repositories import AuthRepository
 from src.doctor.repositories import DoctorRepository

@@ -199,14 +199,70 @@ class AppointmentService:
             available_slots = self.appoint_repo.get_upcoming_free_slots(doc.id)
             
             for slot in available_slots:
+                # Bug Fix: Safe date aur time check lagaya gaya hai
+                # 1. Date check aur day format kiya
+                day_name = slot.slot_date.strftime("%A") if slot.slot_date else ""
+                date_str = str(slot.slot_date) if slot.slot_date else ""
+
+                # 2. Start aur End time ke liye safe extraction
+                start_time_str = str(slot.slot_start_time) if slot.slot_start_time else ""
+                end_time_str = str(slot.slot_end_time) if slot.slot_end_time else ""
+
+                # 3. Final string tabhi banani hai jab dono values available hon, nahi toh empty string
+                full_start = f"{date_str} {start_time_str}".strip() if (date_str and start_time_str) else ""
+                full_end = f"{date_str} {end_time_str}".strip() if (date_str and end_time_str) else ""
+
                 slots_data.append({
                     "slot_id": slot.id,
-                    "day": slot.slot_date.strftime("%A") if slot.slot_date else "", 
-                    "start_time": f"{slot.slot_date} {slot.slot_start_time}",
-                    "end_time": f"{slot.slot_date} {slot.slot_end_time}",
+                    "day": day_name, 
+                    "start_time": full_start,
+                    "end_time": full_end,
                     "venue_address": slot.venue_address,
                     "fee": slot.fee,
                 })
+                
+            result.append({
+                "doctor_id": doc.id,
+                "doctor_name": doc.user.name if doc.user else "Unknown Doctor",
+                "specialization": doc.specialization,
+                "qualification": doc.qualification,
+                "bio_achievements": doc.bio or "Experienced specialist.",
+                "treatment_services": doc.treatment_services or [],
+                "available_slots": slots_data
+            })
+        return result, 200
+    
+    def search_doctors_by_specialization(self, specialization_query: str):
+
+        doctors = self.appoint_repo.get_doctors_by_specialization_only(specialization_query)
+        if not doctors:
+            return {"message": "Doctor not found matching your specialization query"}, 404
+            
+        result = []
+        for doc in doctors:
+            slots_data = []
+
+            available_slots = self.appoint_repo.get_upcoming_free_slots(doc.id)
+            
+            for slot in available_slots:
+                # Bug Fix: Safe date aur time check lagaya gaya hai
+                day_name = slot.slot_date.strftime("%A") if slot.slot_date else ""
+                date_str = str(slot.slot_date) if slot.slot_date else ""
+                start_time_str = str(slot.slot_start_time) if slot.slot_start_time else ""
+                end_time_str = str(slot.slot_end_time) if slot.slot_end_time else ""
+
+                full_start = f"{date_str} {start_time_str}".strip() if (date_str and start_time_str) else ""
+                full_end = f"{date_str} {end_time_str}".strip() if (date_str and end_time_str) else ""
+
+                slots_data.append({
+                    "slot_id": slot.id,
+                    "day": day_name, 
+                    "start_time": full_start,
+                    "end_time": full_end,
+                    "venue_address": slot.venue_address,
+                    "fee": slot.fee,
+                })
+                
                 
             result.append({
                 "doctor_id": doc.id,
