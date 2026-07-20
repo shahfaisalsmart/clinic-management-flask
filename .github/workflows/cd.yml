@@ -16,40 +16,46 @@ jobs:
     - name: Deploy to EC2 via SSH with Rollback
       uses: appleboy/ssh-action@master
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USERNAME }}                 # Amazon Linux ka sahi username
-        key: ${{ secrets.EC2_SSH_KEY }}
+        host: ${{ secrets.EC2_HOST }}  #EC2 ka Public IP address/Domain Name
+        username: ${{ secrets.EC2_USERNAME }}                 # Amazon Linux ka sahi username = ec2-user
+        key: ${{ secrets.EC2_SSH_KEY }} #.pem file puri ki puri copy krni hai
         script: |
+          set -e   # Taki agar git pull ya build fail ho toh purana container band na ho --> build ke crash hote hi deployment safe-stop ho jaye
+
           # 1. Project folder me entry li
           cd /home/ec2-user/clinic_management
           
           # 2. Purane working image ka backup tag banaya (Rollback ke liye)
-          docker tag clinic-api:latest clinic-api:backup || true
+          docker tag clinic-app:latest clinic-app:backup || true
           
           # 3. Latest code pull aur build kiya
+          echo "--- Pulling latest code ---"
           git pull origin main
-          docker build -t clinic-api:latest .
+          docker build -t clinic-app:latest .
           
-          # 4. Purane container ko stop karke naya chalaya
-          docker stop clinic-app-container || true
-          docker rm clinic-app-container || true
-          docker run -d --name clinic-app-container -p 5000:5000 --env-file /home/ec2-user/clinic_management/.env clinic-api:latest
+          # 4. Purane container ko stop karke naya chalaya (Container Re-creation)
+          docker stop clinic-management-container || true
+          docker rm clinic-management-container || true
+          docker run -d --name clinic-management-container -p 5000:5000 --env-file /home/ec2-user/clinic_management/.env clinic-app:latest
           
+          # Disable 'set -e' temporary taki migration fail hone par niche ka rollback execute ho sake
+          set +e
+
           # 5. Migration chalaya aur check kiya ki fail toh nahi hua
           echo "Running Database Migrations..."
-          if ! docker exec clinic-app-container flask db upgrade; then
+          if ! docker exec clinic-management-container flask db upgrade; then
             echo "❌ ERROR: Migration failed! Initiating Rollback..."
             
             # Database ko downgrade kiya agar half-migrate hua ho
-            docker exec clinic-app-container flask db downgrade || true
+            docker exec clinic-management-container flask db downgrade || true
             
             # Naye container ko delete kiya
-            docker stop clinic-app-container || true
-            docker rm clinic-app-container || true
+            docker stop clinic-management-container || true
+            docker rm clinic-management-container || true
             
             # Backup image se purana container wapas chalaya
             echo "Reverting to backup image..."
-            docker run -d --name clinic-app-container -p 5000:5000 --env-file /home/ec2-user/clinic_management/.env clinic-api:backup
+            docker run -d --name clinic-management-container -p 5000:5000 --env-file /home/ec2-user/clinic_management/.env clinic-app:backup
             
             exit 1
           fi
