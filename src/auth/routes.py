@@ -76,7 +76,7 @@ def register_admin():
 
 
 # 4. Login Route
-@auth_bp.route('/login', methods=['POST'])
+@auth_bp.route('/login/v1', methods=['POST'])
 def login():
     json_data = request.get_json()
     if not json_data:
