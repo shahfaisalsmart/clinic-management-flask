@@ -23,7 +23,7 @@ jobs:
           set -e   # Taki agar git pull ya build fail ho toh purana container band na ho --> build ke crash hote hi deployment safe-stop ho jaye
 
           # 1. Project folder me entry li
-          cd /home/ec2-user/clinic_management
+          cd /home/ec2-user/Clinic_management
           
           # 2. Purane working image ka backup tag banaya (Rollback ke liye)
           docker tag clinic-app:latest clinic-app:backup || true
@@ -36,7 +36,7 @@ jobs:
           # 4. Purane container ko stop karke naya chalaya (Container Re-creation)
           docker stop clinic-management-container || true
           docker rm clinic-management-container || true
-          docker run -d --name clinic-management-container -p 5000:5000 --env-file /home/ec2-user/clinic_management/.env clinic-app:latest
+          docker run -d --name clinic-management-container -p 5000:5000 --env-file /home/ec2-user/Clinic_management/.env clinic-app:latest
           
           # Disable 'set -e' temporary taki migration fail hone par niche ka rollback execute ho sake
           set +e
@@ -55,7 +55,7 @@ jobs:
             
             # Backup image se purana container wapas chalaya
             echo "Reverting to backup image..."
-            docker run -d --name clinic-management-container -p 5000:5000 --env-file /home/ec2-user/clinic_management/.env clinic-app:backup
+            docker run -d --name clinic-management-container -p 5000:5000 --env-file /home/ec2-user/Clinic_management/.env clinic-app:backup
             
             exit 1
           fi
