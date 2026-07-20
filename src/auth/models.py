@@ -49,3 +49,7 @@ class Test(db.Model):
 """
 
 
+class TestDeployment(db.Model):
+    __tablename__ = 'test_deployment'
+    id = db.Column(db.Integer, primary_key=True)
+    test_name = db.Column(db.String(50), nullable=False)
