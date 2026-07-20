@@ -149,14 +149,19 @@ def upgrade():
 
 
 def downgrade():
+    # sabse pehle wo tables delete hongi jinme Foreign keys lagi hui h
     op.drop_table('reimbursement_claims')
     op.drop_table('user_insurances')
     op.drop_table('medical_records')
     op.drop_table('appointments')
     op.drop_table('doctor_holidays')
     op.drop_table('doctor_availability')
-    op.drop_table('doctor_profiles')
+    
+    # doctor_configs pehle delete hongi qki ye doctor_profiles prr depend hai
     op.drop_table('doctor_configs')
+    op.drop_table('doctor_profiles')
+    
+    # and lastly base table delete hongi
     op.drop_table('users')
     op.drop_table('roles')
     op.drop_table('insurance_products')
