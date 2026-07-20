@@ -1,6 +1,6 @@
 from src.common.database import db
 from src.auth.models import User, Role
-from src.admin.models import DoctorProfile
+from src.doctor.models import DoctorProfile
 
 
 class DoctorRepository:
